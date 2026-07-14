@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -173,6 +174,9 @@
     <div class="row"><span class="label">Humidité relative</span><span class="value" id="ext-rh">—</span></div>
     <div class="row"><span class="label">Humidité absolue</span><span class="value" id="ext-ah">—</span></div>
     <div class="row"><span class="label">Source</span><span class="value" id="ext-source" style="font-size: 12px; font-weight: 400; color: var(--muted);">—</span></div>
+    <div class="row"><span class="label">Dernière mise à jour</span><span class="value" id="ext-updated" style="font-size: 13px;">—</span></div>
+    <button id="refresh" style="margin-top: 12px;">Actualiser la météo extérieure</button>
+    <p class="status" id="status"></p>
   </div>
 
   <div class="card">
@@ -187,9 +191,6 @@
     </div>
     <div class="row" style="margin-top: 8px;"><span class="label">Humidité absolue</span><span class="value" id="int-ah">—</span></div>
   </div>
-
-  <button id="refresh">Actualiser la météo extérieure</button>
-  <p class="status" id="status"></p>
 
   <p class="formula">
     Humidité absolue = Es × HR × 2,1674 / (273,15 + T), avec Es = 6,112 × exp(17,67×T / (T+243,5)) — approximation de Magnus.
@@ -275,6 +276,9 @@ async function loadExternal() {
   document.getElementById('ext-rh').textContent = RH.toFixed(0) + ' %';
   document.getElementById('ext-ah').textContent = externalAH.toFixed(1) + ' g/m3';
   if (sourceEl) sourceEl.textContent = source;
+  document.getElementById('ext-updated').textContent = new Date().toLocaleString('fr-FR', {
+    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+  });
 
   statusEl.textContent = '';
   btn.disabled = false;
@@ -322,6 +326,9 @@ function applyManual() {
   document.getElementById('ext-rh').textContent = RH.toFixed(0) + ' %';
   document.getElementById('ext-ah').textContent = externalAH.toFixed(1) + ' g/m3';
   document.getElementById('ext-source').textContent = 'Saisie manuelle';
+  document.getElementById('ext-updated').textContent = new Date().toLocaleString('fr-FR', {
+    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+  });
   updateVerdict();
 }
 
