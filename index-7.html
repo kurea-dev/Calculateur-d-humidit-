@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Puis-je aérer ?</title>
+<style>
+  :root {
+    --bg: #10202b;
+    --card: #16303f;
+    --border: #244152;
+    --text: #eef3f5;
+    --muted: #8fa9b8;
+    --accent: #5fd4c4;
+    --accent-dark: #2f8f80;
+    --good: #7fd858;
+    --bad: #e8a33d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 3rem 1.25rem;
+  }
+  main { width: 100%; max-width: 460px; }
+  .eyebrow {
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+  h1 { font-size: 26px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: var(--muted); font-size: 14px; margin: 0 0 1.5rem; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+    position: relative;
+  }
+  .card h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin: 0 0 12px;
+    font-weight: 600;
+  }
+  .search-row { display: flex; gap: 8px; margin-bottom: 4px; }
+  input[type="text"] {
+    flex: 1;
+    background: #0c1c25;
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  .suggestions {
+    margin-top: 6px;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .suggestion {
+    background: #0c1c25;
+    padding: 10px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+  }
+  .suggestion:last-child { border-bottom: none; }
+  .suggestion:hover { background: #12293a; }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .row:last-child { border-bottom: none; }
+  .row .label { color: var(--muted); font-size: 14px; }
+  .row .value { font-size: 15px; font-weight: 600; }
+  .slider-row { margin-bottom: 1rem; }
+  .slider-row:last-child { margin-bottom: 0; }
+  .slider-row .top { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .slider-row .top label { font-size: 14px; color: var(--muted); }
+  .slider-row .top span { font-size: 14px; font-weight: 600; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .verdict {
+    text-align: center;
+    padding: 1.5rem 1.25rem;
+    border-radius: 14px;
+    margin-bottom: 1rem;
+  }
+  .verdict.good { background: rgba(127, 216, 88, 0.12); border: 1px solid rgba(127, 216, 88, 0.4); }
+  .verdict.bad { background: rgba(232, 163, 61, 0.12); border: 1px solid rgba(232, 163, 61, 0.4); }
+  .verdict .title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .verdict.good .title { color: var(--good); }
+  .verdict.bad .title { color: var(--bad); }
+  .verdict .detail { font-size: 13px; color: var(--muted); }
+  button {
+    width: 100%;
+    background: var(--accent);
+    color: #0c1c25;
+    border: none;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: default; }
+  .status {
+    font-size: 13px;
+    color: var(--muted);
+    text-align: center;
+    margin-top: 10px;
+    min-height: 18px;
+  }
+  .formula {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+<main>
+  <p class="eyebrow">Ventilation</p>
+  <h1>Puis-je aérer ?</h1>
+  <p class="sub">Compare l'humidité absolue intérieure et extérieure pour savoir si ouvrir les fenêtres asséchera ou humidifiera votre air.</p>
+
+  <div class="card">
+    <h2>Ville (extérieur)</h2>
+    <div class="search-row">
+      <input type="text" id="city-input" placeholder="Orvault" value="Orvault">
+      <button id="search-btn" style="width: auto; padding: 10px 16px;">Chercher</button>
+    </div>
+    <div class="suggestions" id="suggestions"></div>
+    <button id="toggle-manual" style="margin-top: 10px; background: transparent; border: 1px solid var(--border); color: var(--text);">Saisir manuellement (valeurs lues ailleurs)</button>
+  </div>
+
+  <div class="card" id="manual-card" style="display: none;">
+    <h2>Saisie manuelle</h2>
+    <div class="slider-row">
+      <div class="top"><label for="man-temp">Température</label><span id="man-temp-out">24 °C</span></div>
+      <input type="range" id="man-temp" min="-10" max="45" step="0.5" value="24">
+    </div>
+    <div class="slider-row">
+      <div class="top"><label for="man-rh">Humidité relative</label><span id="man-rh-out">66 %</span></div>
+      <input type="range" id="man-rh" min="0" max="100" step="1" value="66">
+    </div>
+  </div>
+
+  <div class="verdict" id="verdict">
+    <div class="title" id="verdict-title">—</div>
+    <div class="detail" id="verdict-detail">Chargement des données extérieures…</div>
+  </div>
+
+  <div class="card">
+    <h2 id="ext-title">Extérieur (en direct)</h2>
+    <div class="row"><span class="label">Ville</span><span class="value" id="ext-city">Orvault</span></div>
+    <div class="row"><span class="label">Température</span><span class="value" id="ext-temp">—</span></div>
+    <div class="row"><span class="label">Humidité relative</span><span class="value" id="ext-rh">—</span></div>
+    <div class="row"><span class="label">Humidité absolue</span><span class="value" id="ext-ah">—</span></div>
+    <div class="row"><span class="label">Source</span><span class="value" id="ext-source" style="font-size: 12px; font-weight: 400; color: var(--muted);">—</span></div>
+    <div class="row"><span class="label">Dernière mise à jour</span><span class="value" id="ext-updated" style="font-size: 13px;">—</span></div>
+    <div class="row"><span class="label">Appels API (cette session)</span><span class="value" id="ext-callcount" style="font-size: 13px;">0</span></div>
+    <button id="refresh" style="margin-top: 12px;">Actualiser la météo extérieure</button>
+    <p class="status" id="status"></p>
+  </div>
+
+  <div class="card" id="hourly-card" style="display: none;">
+    <h2>Meilleures heures pour aérer aujourd'hui</h2>
+    <p style="font-size: 12px; color: var(--muted); margin: 0 0 12px;">Basé sur les prévisions horaires (Visual Crossing) comparées à ton humidité absolue intérieure actuelle. Les heures où il ferait plus de 3°C au-dessus de ta température intérieure sont exclues (🔥).</p>
+    <div id="hourly-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
+  </div>
+
+  <div class="card">
+    <h2>Intérieur (à régler)</h2>
+    <div class="slider-row">
+      <div class="top"><label for="int-temp">Température</label><span id="int-temp-out">25 °C</span></div>
+      <input type="range" id="int-temp" min="10" max="30" step="1" value="25">
+    </div>
+    <div class="slider-row">
+      <div class="top"><label for="int-rh">Humidité relative</label><span id="int-rh-out">60 %</span></div>
+      <input type="range" id="int-rh" min="0" max="100" step="1" value="60">
+    </div>
+    <div class="row" style="margin-top: 8px;"><span class="label">Humidité absolue</span><span class="value" id="int-ah">—</span></div>
+  </div>
+
+  <p class="formula">
+    Humidité absolue = Es × HR × 2,1674 / (273,15 + T), avec Es = 6,112 × exp(17,67×T / (T+243,5)) — approximation de Magnus.
+    Aérer fait tendre l'air intérieur vers l'humidité absolue extérieure : si elle est plus basse, aérer assèche votre intérieur ; si elle est plus haute, aérer l'humidifie.
+    Source météo : Google Weather API (avec Visual Crossing, Open-Meteo puis OpenWeatherMap en secours automatique).
+  </p>
+</main>
+
+<script>
+let coords = { lat: 47.2833, lon: -1.6167, name: 'Orvault' };
+let externalAH = null;
+let googleCallCount = 0;
+
+(function restoreSavedIndoor() {
+  try {
+    const savedTemp = localStorage.getItem('puisJeAerer_intTemp');
+    const savedRH = localStorage.getItem('puisJeAerer_intRH');
+    if (savedTemp !== null) document.getElementById('int-temp').value = savedTemp;
+    if (savedRH !== null) document.getElementById('int-rh').value = savedRH;
+  } catch (e) {}
+})();
+
+function absoluteHumidity(T, RH) {
+  const es = 6.112 * Math.exp((17.67 * T) / (T + 243.5));
+  return (es * RH * 2.1674) / (273.15 + T);
+}
+
+async function searchCity(query) {
+  const suggestionsEl = document.getElementById('suggestions');
+  suggestionsEl.innerHTML = '';
+  if (!query || query.length < 2) return;
+  try {
+    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=5&language=fr&country=FR`);
+    const data = await res.json();
+    if (!data.results) return;
+    data.results.forEach(r => {
+      const div = document.createElement('div');
+      div.className = 'suggestion';
+      const region = r.admin1 ? `, ${r.admin1}` : '';
+      div.textContent = `${r.name}${region}`;
+      div.addEventListener('click', () => {
+        coords = { lat: r.latitude, lon: r.longitude, name: r.name };
+        document.getElementById('city-input').value = r.name;
+        suggestionsEl.innerHTML = '';
+        if (manualMode) {
+          document.getElementById('toggle-manual').click();
+        } else {
+          loadExternal();
+        }
+        loadHourlyForecast();
+      });
+      suggestionsEl.appendChild(div);
+    });
+  } catch (err) {}
+}
+
+const GOOGLE_API_KEY = 'AIzaSyBRcVCz0knAetTrybBZUb3JaWOmjRRabhk';
+const VC_API_KEY = 'LV2Y6Y35UFTUYPU2VQT5TWLSX';
+const OWM_API_KEY = 'f1181d5b5390a2b87e6e99dd4ac99612';
+
+async function loadExternal() {
+  const statusEl = document.getElementById('status');
+  const sourceEl = document.getElementById('ext-source');
+  const btn = document.getElementById('refresh');
+  btn.disabled = true;
+  statusEl.textContent = 'Récupération des données extérieures…';
+
+  let T, RH, source;
+
+  try {
+    googleCallCount++;
+    document.getElementById('ext-callcount').textContent = googleCallCount;
+    const res = await fetch(`https://weather.googleapis.com/v1/currentConditions:lookup?key=${GOOGLE_API_KEY}&location.latitude=${coords.lat}&location.longitude=${coords.lon}&_ts=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Réponse Google Weather invalide');
+    const data = await res.json();
+    T = data.temperature.degrees;
+    RH = data.relativeHumidity;
+    source = 'Google Weather API';
+  } catch (errG) {
+  try {
+    const res = await fetch(`https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${coords.lat},${coords.lon}?unitGroup=metric&key=${VC_API_KEY}&contentType=json&include=current&_ts=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Réponse Visual Crossing invalide');
+    const data = await res.json();
+    T = data.currentConditions.temp;
+    RH = data.currentConditions.humidity;
+    source = 'Visual Crossing (secours)';
+  } catch (err0) {
+    try {
+      const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lon}&current=temperature_2m,relative_humidity_2m&timezone=auto&_ts=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Réponse Open-Meteo invalide');
+      const data = await res.json();
+      T = data.current.temperature_2m;
+      RH = data.current.relative_humidity_2m;
+      source = 'Open-Meteo (secours)';
+    } catch (err1) {
+      try {
+        const res2 = await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${coords.lat}&lon=${coords.lon}&appid=${OWM_API_KEY}&units=metric&_ts=${Date.now()}`, { cache: 'no-store' });
+        if (!res2.ok) throw new Error('Réponse OpenWeatherMap invalide');
+        const data2 = await res2.json();
+        T = data2.main.temp;
+        RH = data2.main.humidity;
+        source = 'OpenWeatherMap (secours)';
+      } catch (err2) {
+        statusEl.textContent = "Impossible de récupérer la météo. Vérifiez la connexion.";
+        btn.disabled = false;
+        return;
+      }
+    }
+  }
+  }
+
+  externalAH = absoluteHumidity(T, RH);
+
+  document.getElementById('ext-city').textContent = coords.name;
+  document.getElementById('ext-temp').textContent = T.toFixed(1) + ' °C';
+  document.getElementById('ext-rh').textContent = RH.toFixed(0) + ' %';
+  document.getElementById('ext-ah').textContent = externalAH.toFixed(1) + ' g/m3';
+  if (sourceEl) sourceEl.textContent = source;
+  document.getElementById('ext-updated').textContent = new Date().toLocaleString('fr-FR', {
+    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+  });
+
+  statusEl.textContent = '';
+  btn.disabled = false;
+  updateVerdict();
+}
+
+function updateVerdict() {
+  const intTemp = parseFloat(document.getElementById('int-temp').value);
+  const intRH = parseFloat(document.getElementById('int-rh').value);
+  const intAH = absoluteHumidity(intTemp, intRH);
+
+  document.getElementById('int-temp-out').textContent = intTemp.toFixed(0) + ' °C';
+  document.getElementById('int-rh-out').textContent = intRH.toFixed(0) + ' %';
+  document.getElementById('int-ah').textContent = intAH.toFixed(1) + ' g/m3';
+
+  if (externalAH === null) return;
+
+  const verdictEl = document.getElementById('verdict');
+  const titleEl = document.getElementById('verdict-title');
+  const detailEl = document.getElementById('verdict-detail');
+  const diff = Math.abs(intAH - externalAH).toFixed(1);
+
+  if (externalAH < intAH) {
+    verdictEl.className = 'verdict good';
+    titleEl.textContent = 'Oui, vous pouvez aérer';
+    detailEl.textContent = `L'air extérieur est plus sec de ${diff} g/m3 : aérer réduira l'humidité intérieure.`;
+  } else {
+    verdictEl.className = 'verdict bad';
+    titleEl.textContent = 'Mieux vaut attendre';
+    detailEl.textContent = `L'air extérieur est plus humide de ${diff} g/m3 : aérer maintenant ferait monter l'humidité intérieure.`;
+  }
+}
+
+let manualMode = false;
+
+function applyManual() {
+  const T = parseFloat(document.getElementById('man-temp').value);
+  const RH = parseFloat(document.getElementById('man-rh').value);
+  document.getElementById('man-temp-out').textContent = T.toFixed(1) + ' °C';
+  document.getElementById('man-rh-out').textContent = RH.toFixed(0) + ' %';
+
+  externalAH = absoluteHumidity(T, RH);
+  document.getElementById('ext-city').textContent = coords.name + ' (saisie manuelle)';
+  document.getElementById('ext-temp').textContent = T.toFixed(1) + ' °C';
+  document.getElementById('ext-rh').textContent = RH.toFixed(0) + ' %';
+  document.getElementById('ext-ah').textContent = externalAH.toFixed(1) + ' g/m3';
+  document.getElementById('ext-source').textContent = 'Saisie manuelle';
+  document.getElementById('ext-updated').textContent = new Date().toLocaleString('fr-FR', {
+    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+  });
+  updateVerdict();
+}
+
+document.getElementById('toggle-manual').addEventListener('click', () => {
+  manualMode = !manualMode;
+  const manualCard = document.getElementById('manual-card');
+  const toggleBtn = document.getElementById('toggle-manual');
+  const extTitle = document.getElementById('ext-title');
+  const refreshBtn = document.getElementById('refresh');
+  manualCard.style.display = manualMode ? 'block' : 'none';
+  toggleBtn.textContent = manualMode ? 'Revenir à la récupération automatique' : 'Saisir manuellement (valeurs lues ailleurs)';
+  extTitle.textContent = manualMode ? 'Extérieur (manuel)' : 'Extérieur (en direct)';
+  refreshBtn.style.display = manualMode ? 'none' : 'block';
+  if (manualMode) {
+    applyManual();
+  } else {
+    loadExternal();
+  }
+});
+
+document.getElementById('man-temp').addEventListener('input', applyManual);
+document.getElementById('man-rh').addEventListener('input', applyManual);
+
+document.getElementById('search-btn').addEventListener('click', () => searchCity(document.getElementById('city-input').value));
+document.getElementById('city-input').addEventListener('keyup', (e) => {
+  if (e.key === 'Enter') searchCity(e.target.value);
+});
+let hourlyData = null;
+
+async function loadHourlyForecast() {
+  const hourlyCard = document.getElementById('hourly-card');
+  try {
+    const res = await fetch(`https://weather.visualcrossing.com/VisualCrossingWebServices/rest/services/timeline/${coords.lat},${coords.lon}/today?unitGroup=metric&key=${VC_API_KEY}&contentType=json&include=hours&_ts=${Date.now()}`, { cache: 'no-store' });
+    if (!res.ok) throw new Error('Prévisions horaires indisponibles');
+    const data = await res.json();
+    hourlyData = data.days[0].hours;
+    hourlyCard.style.display = 'block';
+    renderHourly();
+  } catch (err) {
+    hourlyData = null;
+    hourlyCard.style.display = 'none';
+  }
+}
+
+function renderHourly() {
+  if (!hourlyData) return;
+  const intTemp = parseFloat(document.getElementById('int-temp').value);
+  const intRH = parseFloat(document.getElementById('int-rh').value);
+  const intAH = absoluteHumidity(intTemp, intRH);
+  const nowHour = new Date().getHours();
+
+  const listEl = document.getElementById('hourly-list');
+  listEl.innerHTML = '';
+
+  let bestHour = null;
+  let bestAH = Infinity;
+
+  hourlyData.forEach(h => {
+    const hourNum = parseInt(h.datetime.split(':')[0], 10);
+    const ah = absoluteHumidity(h.temp, h.humidity);
+    const tempOk = h.temp <= intTemp + 3;
+    if (hourNum >= nowHour && tempOk && ah < bestAH) {
+      bestAH = ah;
+      bestHour = hourNum;
+    }
+  });
+
+  hourlyData.forEach(h => {
+    const hourNum = parseInt(h.datetime.split(':')[0], 10);
+    if (hourNum < nowHour) return;
+    const ah = absoluteHumidity(h.temp, h.humidity);
+    const tempOk = h.temp <= intTemp + 3;
+    const favorable = ah < intAH && tempOk;
+    const isBest = hourNum === bestHour;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-radius: 8px; font-size: 13px;' +
+      (isBest ? ' background: rgba(127, 216, 88, 0.18); border: 1px solid rgba(127, 216, 88, 0.5);' : ' background: #0c1c25;');
+
+    const label = document.createElement('span');
+    label.textContent = `${hourNum}h${isBest ? ' — meilleur créneau' : ''}`;
+    label.style.color = isBest ? 'var(--good)' : 'var(--text)';
+    label.style.fontWeight = isBest ? '600' : '400';
+
+    const detail = document.createElement('span');
+    detail.style.color = 'var(--muted)';
+    const tempFlag = tempOk ? '' : ' 🔥 trop chaud';
+    detail.textContent = `${h.temp.toFixed(0)}°C · ${h.humidity.toFixed(0)}% · ${ah.toFixed(1)} g/m3 ${favorable ? '✅' : '—'}${tempFlag}`;
+
+    row.appendChild(label);
+    row.appendChild(detail);
+    listEl.appendChild(row);
+  });
+}
+
+document.getElementById('int-temp').addEventListener('input', () => {
+  updateVerdict();
+  renderHourly();
+  try { localStorage.setItem('puisJeAerer_intTemp', document.getElementById('int-temp').value); } catch (e) {}
+});
+document.getElementById('int-rh').addEventListener('input', () => {
+  updateVerdict();
+  renderHourly();
+  try { localStorage.setItem('puisJeAerer_intRH', document.getElementById('int-rh').value); } catch (e) {}
+});
+loadExternal();
+loadHourlyForecast();
+</script>
+</body>
+</html>
